@@ -1,0 +1,2 @@
+My notes on machine learning.
+Key insight: data quality matters most.

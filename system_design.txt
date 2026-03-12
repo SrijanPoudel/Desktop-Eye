@@ -1,0 +1,18 @@
+
+# System Design Notes
+
+## Sharding
+Sharding splits a database across multiple servers. Each server (shard) holds a subset of the data.
+Use sharding when a single database can't handle the load.
+Benefits: horizontal scalability, better performance under load.
+
+## Caching with Redis
+Redis stores frequently accessed data in memory.
+Retrieving from cache is 100x faster than from disk.
+Cache invalidation is the hardest part — know when data is stale.
+Use TTL (time-to-live) to auto-expire cached items.
+
+## Key Takeaways
+1. Always add caching before horizontal scaling
+2. Measure first — never guess at bottlenecks
+3. Design for failure — every server will eventually crash
