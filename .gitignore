@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+knowledge_db/
+uploads/
+.idea/
+.gradio/
+.ipynb_checkpoints/
+Main
