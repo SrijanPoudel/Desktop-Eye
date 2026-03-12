@@ -5,13 +5,17 @@ from fastapi import FastAPI, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from rag_engine import ingest_document, ask, clear_memory
+from rag_engine import ingest_document, ask, clear_memory, delete_document, list_documents
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class Question(BaseModel):
     question: str
+    session_id: Optional[str] = "default"
+
+class DeleteDoc(BaseModel):
+    filename: str
     session_id: Optional[str] = "default"
 
 @app.get("/")
@@ -22,6 +26,11 @@ def root():
 def new_session():
     return {"session_id": str(uuid.uuid4())}
 
+@app.get("/documents")
+def get_documents(x_session_id: Optional[str] = Header(None)):
+    session_id = x_session_id or "default"
+    return {"documents": list_documents(session_id)}
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), x_session_id: Optional[str] = Header(None)):
     session_id = x_session_id or "default"
@@ -31,6 +40,11 @@ async def upload(file: UploadFile = File(...), x_session_id: Optional[str] = Hea
         shutil.copyfileobj(file.file, f)
     success = ingest_document(path, session_id)
     return {"success": success, "filename": file.filename}
+
+@app.post("/delete")
+def delete_doc(body: DeleteDoc):
+    success = delete_document(body.filename, body.session_id or "default")
+    return {"success": success}
 
 @app.post("/ask")
 def ask_question(q: Question):

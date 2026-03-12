@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from document_loader import load_document
 from chunker import chunk_text
-from vector_store import add_chunks_to_db, search_documents, doc_count, clear_session
+from vector_store import add_chunks_to_db, search_documents, doc_count, clear_session, delete_doc_from_db, list_docs
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -22,6 +22,12 @@ def ingest_document(filepath, session_id="default"):
     chunks = chunk_text(doc["content"], doc["filename"])
     add_chunks_to_db(chunks, session_id)
     return True
+
+def delete_document(filename, session_id="default"):
+    return delete_doc_from_db(filename, session_id)
+
+def list_documents(session_id="default"):
+    return list_docs(session_id)
 
 def ask(question, session_id="default"):
     if session_id not in sessions:

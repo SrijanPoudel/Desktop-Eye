@@ -30,6 +30,25 @@ def add_chunks_to_db(chunks, session_id="default"):
             metadatas=[{"source": c["source"], "chunk": c["chunk_index"]}],
             ids=[c["id"]])
 
+def delete_doc_from_db(filename, session_id="default"):
+    try:
+        collection = get_collection(session_id)
+        results = collection.get(where={"source": filename})
+        if results["ids"]:
+            collection.delete(ids=results["ids"])
+        return True
+    except:
+        return False
+
+def list_docs(session_id="default"):
+    try:
+        collection = get_collection(session_id)
+        results = collection.get()
+        sources = list(set(m["source"] for m in results["metadatas"])) if results["metadatas"] else []
+        return sources
+    except:
+        return []
+
 def search_documents(question, session_id="default", top_k=5):
     collection = get_collection(session_id)
     n = min(top_k, collection.count())
