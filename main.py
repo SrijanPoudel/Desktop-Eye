@@ -49,6 +49,13 @@ async def ask_question(q: Question):
     except Exception as e:
         return {"answer": f"Error: {str(e)}", "sources": []}
 
+@app.post("/ask")
+async def ask_question(q: Question):
+    try:
+        return ask(q.text)
+    except Exception as e:
+        return {"answer": f"Error: {str(e)}", "sources": []}
+
 
 @app.post("/clear")
 async def clear():

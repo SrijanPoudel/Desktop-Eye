@@ -641,37 +641,45 @@ body {
   const API = 'https://desktop-eye.onrender.com';
 
   document.getElementById('fileInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const status = document.getElementById('uploadStatus');
-    status.textContent = `Reading ${file.name}…`;
-    status.className = 'upload-status';
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await fetch(`${API}/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.status === 'ok'){
+  const file = e.target.files[0];
+  if (!file) return;
 
-        docCount++;
-        document.getElementById('docCount').textContent =
+  const status = document.getElementById('uploadStatus');
+  status.textContent = `Reading ${file.name}…`;
+  status.className = 'upload-status';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch(`${API}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    console.log('UPLOAD RESPONSE:', data);
+
+    if (data.status === 'ok') {
+      docCount++;
+      document.getElementById('docCount').textContent =
         `${docCount} document${docCount > 1 ? 's' : ''}`;
-        status.textContent = data.message;
-        status.className = 'upload-status ok';
-        hideWelcome();
-        addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
-        } else {
-        status.textContent = data.message || 'Could not load file';
-        status.className = 'upload-status err';
-        }
-    } catch (err) {
-      status.textContent = 'Upload failed';
+      status.textContent = data.message || `${file.name} uploaded`;
+      status.className = 'upload-status ok';
+      hideWelcome();
+      addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
+    } else {
+      status.textContent = data.message || 'Upload failed';
       status.className = 'upload-status err';
-      console.error(err);
-
     }
-    e.target.value = '';
-  });
+  } catch (err) {
+    console.error('UPLOAD ERROR:', err);
+    status.textContent = 'Upload failed';
+    status.className = 'upload-status err';
+  }
+
+  e.target.value = '';
+});
 
   async function sendQuestion() {
     const input = document.getElementById('questionInput');
