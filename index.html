@@ -784,6 +784,7 @@ body {
 <script>
   let docCount = 0;
   const API = 'https://desktop-eye.onrender.com';
+  const SESSION_ID = localStorage.getItem('session_id') || (() => { const id = crypto.randomUUID(); localStorage.setItem('session_id', id); return id; })();
 
   // ── WELCOME MODAL ──
   function closeModal() {
