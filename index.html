@@ -651,21 +651,24 @@ body {
     try {
       const res = await fetch(`${API}/upload`, { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.status === 'ok') {
+      if (data.status === 'ok'){
+
         docCount++;
         document.getElementById('docCount').textContent =
-          `${docCount} document${docCount > 1 ? 's' : ''}`;
-        status.textContent = `${file.name} is ready`;
+        `${docCount} document${docCount > 1 ? 's' : ''}`;
+        status.textContent = data.message;
         status.className = 'upload-status ok';
         hideWelcome();
         addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
-      } else {
-        status.textContent = 'Could not load file';
+        } else {
+        status.textContent = data.message || 'Could not load file';
         status.className = 'upload-status err';
-      }
-    } catch {
-      status.textContent = 'Cannot connect — is the server running?';
+        }
+    } catch (err) {
+      status.textContent = 'Upload failed';
       status.className = 'upload-status err';
+      console.error(err);
+
     }
     e.target.value = '';
   });
