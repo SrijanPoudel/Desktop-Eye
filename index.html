@@ -887,7 +887,7 @@ body {
         status.textContent = `✅ ${file.name} uploaded successfully!`;
         status.className = 'upload-status ok';
         hideWelcome();
-        launchConfetti();
+        
         addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
       } else {
         status.textContent = 'Could not load file';
