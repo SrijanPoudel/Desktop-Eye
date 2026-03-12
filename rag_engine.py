@@ -3,78 +3,57 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from document_loader import load_document
 from chunker import chunk_text
-from vector_store import add_chunks_to_db, search_documents, doc_count
+from vector_store import add_chunks_to_db, search_documents, doc_count, clear_session
 
 load_dotenv()
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-history = []
+sessions = {}
 
-SYSTEM_PROMPT = """You are Desktop Eye, a friendly and intelligent AI assistant created by Srijan Paudel.
-
-Your personality:
+SYSTEM_PROMPT = """You are Desktop Eye, a friendly AI assistant created by Srijan Paudel.
 - Warm, helpful, and conversational
-- Professional but approachable
-
-When NO documents are uploaded:
-- Chat normally and answer general questions
-- If asked to summarize or analyze, say: "Please upload a document first using the + Add Document button above!"
-- Introduce yourself if greeted
-
-When documents ARE uploaded:
-- Answer ONLY using the document content
-- Always cite sources using [Source X]
-- If answer isn't in document, say so honestly
-
-About yourself:
-- Name: Desktop Eye
-- Created by: Srijan Paudel
-- Purpose: Read and analyze documents using AI
-- Powered by: GPT-4o-mini + RAG
+- When NO documents uploaded: chat normally, answer general questions
+- When documents uploaded: answer ONLY using document content, cite sources
+- Name: Desktop Eye | Creator: Srijan Paudel | Powered by GPT-4o-mini + RAG
 """
 
-def ingest_document(filepath):
-    print(f"\n📄 Processing: {filepath}")
+def ingest_document(filepath, session_id="default"):
     doc = load_document(filepath)
-    if not doc:
-        return False
+    if not doc: return False
     chunks = chunk_text(doc["content"], doc["filename"])
-    print(f"✂️ {len(chunks)} chunks created, storing...")
-    add_chunks_to_db(chunks)
-    print(f"✅ Done — DB has {doc_count()} total chunks")
+    add_chunks_to_db(chunks, session_id)
     return True
 
-def ask(question):
+def ask(question, session_id="default"):
+    if session_id not in sessions:
+        sessions[session_id] = []
+    history = sessions[session_id]
     history.append({"role": "user", "content": question})
 
-    if doc_count() == 0:
+    if doc_count(session_id) == 0:
         resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=512,
+            model="gpt-4o-mini", max_tokens=512,
             messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history[-6:]
         )
         answer = resp.choices[0].message.content
         history.append({"role": "assistant", "content": answer})
         return {"answer": answer, "sources": []}
 
-    chunks, metas = search_documents(question)
+    chunks, metas = search_documents(question, session_id)
     context = "\n\n---\n\n".join(
         f"[Source {i+1}: {m['source']}]\n{c}"
         for i, (c, m) in enumerate(zip(chunks, metas))
     )
-
     full_system = SYSTEM_PROMPT + f"\n\nDOCUMENT EXCERPTS:\n{context}"
-
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        max_tokens=1024,
+        model="gpt-4o-mini", max_tokens=1024,
         messages=[{"role": "system", "content": full_system}] + history[-6:]
     )
-
     answer = resp.choices[0].message.content
     history.append({"role": "assistant", "content": answer})
     sources = list(set(m["source"] for m in metas))
     return {"answer": answer, "sources": sources}
 
-def clear_memory():
-    history.clear()
+def clear_memory(session_id="default"):
+    if session_id in sessions:
+        sessions[session_id] = []
+    clear_session(session_id)
