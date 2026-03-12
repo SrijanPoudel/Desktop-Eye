@@ -889,7 +889,7 @@ body {
         status.className = 'upload-status ok';
         hideWelcome();
         
-        addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
+        refreshDocList(); addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
       } else {
         status.textContent = 'Could not load file';
         status.className = 'upload-status err';
@@ -1020,4 +1020,105 @@ body {
   }
 </script>
 </body>
-</html>
+</html><style>
+.doc-list {
+  padding: 8px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.doc-list.visible { display: flex; }
+.doc-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 4px 10px 4px 12px;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+.doc-tag-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-delete-btn {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--muted2);
+  color: white;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  padding: 0;
+}
+.doc-delete-btn:hover { background: var(--red); }
+</style>
+<script>
+async function refreshDocList() {
+  try {
+    const res = await fetch(`${API}/documents`, {
+      headers: { 'x-session-id': SESSION_ID }
+    });
+    const data = await res.json();
+    const docs = data.documents || [];
+    const list = document.getElementById('docList');
+    
+    if (docs.length === 0) {
+      list.classList.remove('visible');
+      list.innerHTML = '';
+      return;
+    }
+    
+    list.classList.add('visible');
+    list.innerHTML = docs.map(name => `
+      <div class="doc-tag" id="tag-${btoa(name)}">
+        <span class="doc-tag-name" title="${escHtml(name)}">📄 ${escHtml(name)}</span>
+        <button class="doc-delete-btn" onclick="deleteDoc('${escHtml(name)}')" title="Remove">✕</button>
+      </div>
+    `).join('');
+    
+    document.getElementById('docCount').textContent = 
+      `${docs.length} document${docs.length > 1 ? 's' : ''}`;
+  } catch(e) {
+    console.error('Could not load doc list', e);
+  }
+}
+
+async function deleteDoc(filename) {
+  try {
+    const res = await fetch(`${API}/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, session_id: SESSION_ID })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await refreshDocList();
+      const list = document.getElementById('docList');
+      if (!list.classList.contains('visible')) {
+        document.getElementById('docCount').textContent = 'No documents';
+        docCount = 0;
+      }
+    }
+  } catch(e) {
+    console.error('Delete failed', e);
+  }
+}
+
+// Refresh doc list on load
+refreshDocList();
+</script>
