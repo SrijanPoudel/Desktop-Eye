@@ -36,4 +36,4 @@ def search_documents(question, top_k=5):
 def doc_count(): return collection.count()
 
 if __name__ == "__main__":
-    print("✅ vector_store.py is ready!")
+    print(" vector_store.py is ready!")
