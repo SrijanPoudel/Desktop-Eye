@@ -660,11 +660,11 @@ body {
     const data = await res.json();
     console.log('UPLOAD RESPONSE:', data);
 
-    if (data.status === 'ok') {
+    if (data.success === true) {
       docCount++;
       document.getElementById('docCount').textContent =
         `${docCount} document${docCount > 1 ? 's' : ''}`;
-      status.textContent = data.message || `${file.name} uploaded`;
+      status.textContent = `✅ ${file.name} uploaded successfully!`;
       status.className = 'upload-status ok';
       hideWelcome();
       addAIMessage(`I've read <strong>${escHtml(file.name)}</strong>. What would you like to know about it?`, []);
