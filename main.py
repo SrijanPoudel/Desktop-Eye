@@ -56,3 +56,13 @@ def clear(q: Optional[Question] = None):
     session_id = q.session_id if q else "default"
     clear_memory(session_id)
     return {"cleared": True}
+
+
+@app.post("/admin-reset")
+def admin_reset():
+    import chromadb
+    DB_PATH = "/data/knowledge_db" if __import__('os').path.exists("/data") else "./knowledge_db"
+    client = chromadb.PersistentClient(path=DB_PATH)
+    for col in client.list_collections():
+        client.delete_collection(col.name)
+    return {"reset": True}
