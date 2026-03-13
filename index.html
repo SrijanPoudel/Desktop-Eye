@@ -1230,6 +1230,13 @@ async function deleteDoc(filename) {
       const status = document.getElementById('uploadStatus');
       status.textContent = 'Upload a PDF, TXT, MD, or DOCX to get started';
       status.className = 'upload-status';
+      // If no documents left, clear chat and reset AI memory
+      const remaining = await fetch(`${API}/documents`, { headers: { 'x-session-id': SESSION_ID } });
+      const remainingData = await remaining.json();
+      if ((remainingData.documents || []).length === 0) {
+        await fetch(`${API}/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID }, body: JSON.stringify({ session_id: SESSION_ID }) });
+        clearChat();
+      }
     }
   } catch(e) {
     console.error('Delete failed', e);
