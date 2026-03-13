@@ -1226,6 +1226,10 @@ async function deleteDoc(filename) {
     const data = await res.json();
     if (data.success) {
       await refreshDocList();
+      // Clear the "uploaded successfully" green text
+      const status = document.getElementById('uploadStatus');
+      status.textContent = 'Upload a PDF, TXT, MD, or DOCX to get started';
+      status.className = 'upload-status';
     }
   } catch(e) {
     console.error('Delete failed', e);
