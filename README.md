@@ -18,34 +18,18 @@ Data Layer
 - OpenAI GPT-4o-mini — answer generation
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
-🔄 How RAG Works in Desktop Eye
+ 🔄 How RAG Works
 
-User uploads document
-        │
-        ▼
-document_loader.py ──► Extracts text from PDF/DOCX/TXT/MD
-        │
-        ▼
-chunker.py ──► Splits into 800-char chunks with 100-char overlap
-        │
-        ▼
-vector_store.py ──► Embeds each chunk using text-embedding-3-small
-        │
-        ▼
-ChromaDB ──► Stores embeddings in session-isolated collection
-        │
-        ▼
-User asks question
-        │
-        ▼
-vector_store.py ──► Embeds question → semantic search → top 5 chunks
-        │
-        ▼
-rag_engine.py ──► Builds context + sends to GPT-4o-mini
-        │
-        ▼
-Answer with cited sources returned to user
----------------------------------------------------------------------------------------------------------------------------------------------------------
+| Step | Component | Action |
+|------|-----------|--------|
+| 1 | document_loader.py | Extracts text from PDF, DOCX, TXT, MD |
+| 2 | chunker.py | Splits text into 800-char chunks with 100-char overlap |
+| 3 | vector_store.py | Embeds each chunk using text-embedding-3-small |
+| 4 | ChromaDB | Stores embeddings in session-isolated collection |
+| 5 | vector_store.py | Embeds question → semantic search → top 5 chunks |
+| 6 | rag_engine.py | Builds context and sends to GPT-4o-mini |
+| 7 | API response | Returns answer with cited sources to user |
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 
 🛠 Tech Stack
 
