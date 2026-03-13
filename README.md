@@ -1,23 +1,95 @@
-# Comic Characters
+# 👁 Desktop Eye — AI Document Intelligence Assistant
 
-This folder contains data behind the story [Comic Books Are Still Made By Men, For Men And About Men](http://fivethirtyeight.com/features/women-in-comic-books/).
+> **Upload any document. Ask anything. Get cited answers instantly.**
 
-The data comes from [Marvel Wikia](http://marvel.wikia.com/Main_Page) and [DC Wikia](http://dc.wikia.com/wiki/Main_Page). Characters were scraped on August 24. Appearance counts were scraped on September 2. The month and year of the first issue each character appeared in was pulled on October 6.
+## 🧠 What is Desktop Eye?
 
-The data is split into two files, for DC and Marvel, respectively: `dc-wikia-data.csv` and `marvel-wikia-data.csv`. Each file has the following variables:
+Desktop Eye is a full-stack AI-powered document assistant that uses **Retrieval-Augmented Generation (RAG)** to answer questions from uploaded documents with source citations and session privacy.
 
-Variable | Definition
----|---------
-`page_id` | The unique identifier for that characters page within the wikia
-`name` | The name of the character
-`urlslug` | The unique url within the wikia that takes you to the character
-`ID` | The identity status of the character (Secret Identity, Public identity, [on marvel only: No Dual Identity])
-`ALIGN` | If the character is Good, Bad or Neutral
-`EYE` | Eye color of the character
-`HAIR` | Hair color of the character
-`SEX` | Sex of the character (e.g. Male, Female, etc.)
-`GSM` | If the character is a gender or sexual minority (e.g. Homosexual characters, bisexual characters)
-`ALIVE` | If the character is alive or deceased
-`APPEARANCES` | The number of appareances of the character in comic books (as of Sep. 2, 2014. Number will become increasingly out of date as time goes on.)
-`FIRST APPEARANCE` | The month and year of the character's first appearance in a comic book, if available
-`YEAR` | The year of the character's first appearance in a comic book, if available
+Unlike ChatGPT, Desktop Eye:
+- 🔒 Keeps documents **private per session**
+- 📄 Answers **only from your document** — no hallucinations  
+- 🔍 Shows **exactly which source** every answer came from
+- 🚀 Works with **PDF, DOCX, TXT, and MD** files
+
+## ✨ Features
+- Upload multiple documents per session
+- Chat with documents using natural language
+- Delete individual documents from session
+- AI personality that chats normally without documents
+- Session-isolated vector storage — no data leakage between users
+- Animated Apple-style UI
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | HTML, CSS, Vanilla JavaScript |
+| **Backend** | Python, FastAPI, Uvicorn |
+| **AI Model** | OpenAI GPT-4o-mini |
+| **Embeddings** | OpenAI text-embedding-3-small |
+| **Vector DB** | ChromaDB |
+| **Document Parsing** | pypdf, python-docx |
+| **Environment** | python-dotenv |
+| **Frontend Hosting** | GitHub Pages |
+| **Backend Hosting** | Render |
+
+## 🔄 How RAG Works
+```
+User uploads document
+        │
+        ▼
+document_loader.py → Extracts text from PDF/DOCX/TXT/MD
+        │
+        ▼
+chunker.py → Splits into 800-char chunks, 100-char overlap
+        │
+        ▼
+vector_store.py → Embeds chunks using text-embedding-3-small
+        │
+        ▼
+ChromaDB → Stores in session-isolated collection
+        │
+        ▼
+User asks question → semantic search → top 5 chunks
+        │
+        ▼
+GPT-4o-mini → Generates cited answer from context
+```
+
+## 📁 Project Structure
+```
+desktop-eye/
+├── main.py              # FastAPI app — all API endpoints
+├── rag_engine.py        # RAG pipeline — ingest, ask, clear
+├── vector_store.py      # ChromaDB — embed, search, delete
+├── document_loader.py   # File parser — PDF, DOCX, TXT, MD
+├── chunker.py           # Text chunking strategy
+├── index.html           # Full frontend UI
+├── requirements.txt     # Python dependencies
+└── Procfile             # Render deployment config
+```
+
+## 🚀 Run Locally
+```bash
+git clone https://github.com/SrijanPoudel/Desktop-Eye.git
+cd Desktop-Eye
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+echo "OPENAI_API_KEY=your-key-here" > .env
+uvicorn main:app --reload
+```
+
+Then open index.html in your browser.
+
+## 🌐 Live Demo
+
+- **App:** https://srijanpoudel.github.io/Desktop-Eye/
+- **API:** https://desktop-eye.onrender.com
+
+## 👤 Author
+
+**Srijan Paudel** — [@SrijanPoudel](https://github.com/SrijanPoudel)
+
+© 2026 Srijan Paudel · Desktop Eye — All rights reserved
