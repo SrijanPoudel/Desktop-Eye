@@ -53,7 +53,7 @@ def ask_question(q: Question):
 
 @app.post("/clear")
 def clear(q: Optional[Question] = None):
-    session_id = q.session_id if q else "default"
+    session_id = (q.session_id if q.session_id else "default") if q else "default"
     clear_memory(session_id)
     return {"cleared": True}
 
