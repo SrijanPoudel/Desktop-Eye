@@ -1,4 +1,6 @@
 import os
+import re
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
 from document_loader import load_document
@@ -27,10 +29,8 @@ FORMATTING RULES — always follow these:
 - IMPORTANT: Multiple [Source] excerpts may come from the SAME document — they are chunks of the same file, not separate documents. Count unique filenames only when asked how many documents you have.
 
 EXAM RESTRICTION:
-- If the user explicitly says they are currently taking an exam, in an exam, or asks you to help them cheat in an exam — politely refuse and say you cannot assist during an active exam.
-- Example triggers: "I'm giving an exam", "I'm in an exam right now", "help me cheat", "this is my exam"
-- Do NOT restrict if they upload an exam paper, past paper, or study material — that is normal studying.
-- Do NOT restrict based on document content — only restrict based on what the user explicitly says.
+- If the user explicitly says they are currently taking an exam, in an exam, or asks you to help them cheat in an exam — politely refuse.
+- Do NOT restrict if they upload an exam paper or study material — that is normal studying.
 
 IDENTITY:
 - Name: Desktop Eye | Creator: Srijan Paudel | Powered by GPT-4o-mini + RAG
@@ -48,6 +48,73 @@ def delete_document(filename, session_id="default"):
 
 def list_documents(session_id="default"):
     return list_docs(session_id)
+
+def generate_quiz(session_id="default", num_questions=5):
+    """Generate MCQ quiz from uploaded documents"""
+    if doc_count(session_id) == 0:
+        return {"error": "No documents uploaded. Please upload a document first to generate a quiz."}
+
+    # Get all chunks from the session
+    from vector_store import search_documents
+    chunks, metas = search_documents("main concepts key points important information", session_id, top_k=8)
+
+    if not chunks:
+        return {"error": "Could not retrieve document content for quiz generation."}
+
+    context = "\n\n---\n\n".join(
+        f"[Source: {m['source']}]\n{c}"
+        for c, m in zip(chunks, metas)
+    )
+
+    quiz_prompt = f"""Based on the following document content, generate exactly {num_questions} multiple choice questions.
+
+DOCUMENT CONTENT:
+{context}
+
+STRICT RULES:
+- Each question must have exactly 4 options labeled A, B, C, D
+- Only one option is correct
+- Questions must be based ONLY on the document content
+- Make questions varied — definitions, facts, concepts
+- Return ONLY valid JSON, no extra text, no markdown
+
+Return this exact JSON format:
+{{
+  "questions": [
+    {{
+      "question": "Question text here?",
+      "options": {{
+        "A": "First option",
+        "B": "Second option", 
+        "C": "Third option",
+        "D": "Fourth option"
+      }},
+      "correct": "A",
+      "explanation": "Brief explanation why A is correct"
+    }}
+  ]
+}}"""
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": quiz_prompt}],
+        temperature=0.7
+    )
+
+    raw = resp.choices[0].message.content.strip()
+
+    # Clean up any markdown code blocks if present
+    raw = re.sub(r'^```json\s*', '', raw)
+    raw = re.sub(r'^```\s*', '', raw)
+    raw = re.sub(r'\s*```$', '', raw)
+
+    try:
+        quiz_data = json.loads(raw)
+        return {"quiz": quiz_data["questions"]}
+    except json.JSONDecodeError:
+        return {"error": "Could not generate quiz. Please try again."}
+
 
 def ask(question, session_id="default"):
     if session_id not in sessions:

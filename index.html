@@ -857,7 +857,16 @@ body {
     return id; 
   })();
 
-
+  // Clear any leftover data on Render for this session on load
+  (async () => {
+    try {
+      await fetch(`${API}/clear`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID },
+        body: JSON.stringify({ session_id: SESSION_ID })
+      });
+    } catch {}
+  })();
 
   // ── WELCOME MODAL ──
   function closeModal() {
