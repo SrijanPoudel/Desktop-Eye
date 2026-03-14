@@ -481,6 +481,44 @@ body {
 .send-btn:hover { background: var(--accent2); box-shadow: 0 4px 12px rgba(0,113,227,0.3); }
 .send-btn:active { transform: scale(0.95); }
 
+.mic-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.mic-btn:hover { background: var(--surface2); color: var(--text); }
+.mic-btn.listening {
+  background: #fee2e2;
+  border-color: var(--red);
+  color: var(--red);
+  animation: mic-pulse 1s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(255,59,48,0); }
+}
+
+.lang-select {
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
 .input-hint {
   text-align: center;
   font-size: 11px;
@@ -772,9 +810,24 @@ body {
       <input type="text" id="questionInput"
         placeholder="Ask anything about your documents…"
         onkeydown="if(event.key==='Enter') sendQuestion()">
+      <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
       <button class="send-btn" onclick="sendQuestion()">↑</button>
     </div>
-    <div class="input-hint">Return to send &nbsp;·&nbsp; Powered by GPT-4o-mini</div>
+    <div class="input-hint">
+      Return to send &nbsp;·&nbsp; Powered by GPT-4o-mini &nbsp;·&nbsp;
+      <select class="lang-select" id="langSelect" title="Response language">
+        <option value="English">🌐 English</option>
+        <option value="Spanish">🇪🇸 Spanish</option>
+        <option value="French">🇫🇷 French</option>
+        <option value="Hindi">🇮🇳 Hindi</option>
+        <option value="Nepali">🇳🇵 Nepali</option>
+        <option value="Chinese">🇨🇳 Chinese</option>
+        <option value="Arabic">🇸🇦 Arabic</option>
+        <option value="German">🇩🇪 German</option>
+        <option value="Japanese">🇯🇵 Japanese</option>
+        <option value="Portuguese">🇧🇷 Portuguese</option>
+      </select>
+    </div>
   </div>
 
   <!-- COPYRIGHT -->
@@ -939,11 +992,13 @@ body {
     addUserMessage(q);
     const thinkId = 'think-' + Date.now();
     addThinking(thinkId);
+    const lang = document.getElementById('langSelect')?.value || 'English';
+    const question = lang !== 'English' ? `${q} (Please respond in ${lang})` : q;
     try {
       const res = await fetch(`${API}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID },
-        body: JSON.stringify({ question: q, session_id: SESSION_ID })
+        body: JSON.stringify({ question: question, session_id: SESSION_ID })
       });
       const data = await res.json();
       document.getElementById(thinkId)?.remove();
@@ -1113,6 +1168,48 @@ async function deleteDoc(filename) {
     }
   } catch(e) { console.error('Delete failed', e); }
 }
+
+  // ── VOICE INPUT ──
+  let recognition = null;
+  let isListening = false;
+
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Voice input is not supported in this browser. Please use Chrome.');
+      return;
+    }
+    if (isListening) { recognition.stop(); return; }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    const micBtn = document.getElementById('micBtn');
+    const input = document.getElementById('questionInput');
+    recognition.onstart = () => {
+      isListening = true;
+      micBtn.classList.add('listening');
+      micBtn.title = 'Listening... click to stop';
+      input.placeholder = '🎤 Listening...';
+    };
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      input.value = transcript;
+    };
+    recognition.onend = () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+      micBtn.title = 'Voice input';
+      input.placeholder = 'Ask anything about your documents…';
+      if (input.value.trim()) sendQuestion();
+    };
+    recognition.onerror = () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+      input.placeholder = 'Ask anything about your documents…';
+    };
+    recognition.start();
+  }
 
 refreshDocList();
 </script>
